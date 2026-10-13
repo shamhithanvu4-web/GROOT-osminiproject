@@ -1,0 +1,38 @@
+/* =========================================================
+   G.R.O.O.T. — components.css
+   Pieces shared by several stages: buffer slots, IN/OUT pointers,
+   status bubbles and the little "no!" shake.
+   ========================================================= */
+/* ---------- Shared: buffer slots ---------- */
+.slots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--slot-gap,12px)}
+.slot{position:relative;aspect-ratio:1/1.12;border-radius:var(--slot-r,18px);border:2px dashed rgba(75,83,32,.45);background:rgba(255,255,255,.78);display:grid;place-items:center;overflow:hidden;transition:background-color .3s,border-color .3s,box-shadow .3s}
+.slot-num{position:absolute;top:6px;left:9px;font:600 .66rem/1 var(--f-mono);color:var(--muted)}
+.slot .pkg{display:none;flex-direction:column;align-items:center;gap:4px;color:#fff;font:700 var(--pkg-fs,1rem)/1 var(--f-mono)}
+.pkg-icon{width:var(--pkg-ico,28px);height:var(--pkg-ico,28px)}
+.slot.is-filled,.slot.is-claimed{border:2px solid var(--green);background:linear-gradient(165deg,#606B34 0%,#4B5320 72%);box-shadow:0 12px 26px -12px rgba(75,83,32,.85),0 0 0 4px rgba(75,83,32,.08),inset 0 1px 0 rgba(255,255,255,.2)}
+.slot.is-filled .pkg,.slot.is-claimed .pkg{display:flex}
+.slot.is-filled .slot-num,.slot.is-claimed .slot-num{color:rgba(255,255,255,.7)}
+.slot.is-claimed{box-shadow:0 0 0 3px #fff,0 0 0 6px rgba(75,83,32,.5),0 12px 26px -12px rgba(75,83,32,.85)}
+.slot.is-reserved{border:2px dashed var(--green);background:repeating-linear-gradient(135deg,rgba(221,230,207,.95) 0 8px,rgba(255,255,255,.95) 8px 16px)}
+.slot.is-freeing{border:2px dashed rgba(75,83,32,.32);background:rgba(237,242,228,.95)}
+.slot-note{position:absolute;bottom:7px;left:0;right:0;text-align:center;font:700 .58rem/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--green)}
+.slot.is-claimed .slot-note{color:rgba(255,255,255,.9)}
+.slot .ghost{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--green);color:#fff;font:700 var(--pkg-fs,1rem)/1 var(--f-mono);animation:leave .55s ease-in forwards;pointer-events:none}
+@keyframes leave{to{transform:translate(35%,-8%) scale(.6);opacity:0}}
+.pkg.is-new{animation:pop .5s cubic-bezier(.2,.9,.3,1.25)}
+@keyframes pop{0%{transform:translateY(-16px) scale(.55);opacity:0}60%{transform:translateY(0) scale(1.08);opacity:1}100%{transform:none}}
+.slots-lg{width:100%;max-width:540px;margin-inline:auto;--slot-gap:clamp(6px,1.2vw,14px);--pkg-ico:clamp(18px,2.2vw,28px);--pkg-fs:clamp(.76rem,1.2vw,1rem)}
+.slots-md{--slot-gap:clamp(5px,1vw,10px);--pkg-ico:clamp(16px,2vw,24px);--pkg-fs:clamp(.7rem,1.1vw,.9rem);--slot-r:14px}
+.pointers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--slot-gap,12px);margin-top:8px;min-height:20px}
+.ptr{display:flex;justify-content:center;gap:3px;flex-wrap:wrap}
+.ptr span{font:700 .6rem/1 var(--f-mono);letter-spacing:.06em;padding:3px 6px;border-radius:999px}
+.ptr-in{background:var(--green);color:#fff}
+.ptr-out{background:#fff;color:var(--green);box-shadow:inset 0 0 0 1px rgba(75,83,32,.45)}
+@media (max-width:560px){.slot-note{display:none}}
+
+.status-bubble{display:inline-block;text-align:center;font-size:.74rem;font-weight:700;line-height:1.25;padding:5px 10px;border-radius:999px;background:var(--sage);color:var(--green-d);max-width:128px}
+.status-bubble.is-wait{background:var(--amber-bg);color:var(--amber-ink);box-shadow:inset 0 0 0 1px var(--amber-bd)}
+.status-bubble.is-danger{background:var(--red-bg);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-bd)}
+.status-bubble.is-ok{background:var(--green);color:#fff}
+.is-shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
