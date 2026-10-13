@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>G.R.O.O.T. — Guarded Resource Orchestration &amp; Operation Terminal</title>
+<meta name="description" content="G.R.O.O.T. (Guarded Resource Orchestration &amp; Operation Terminal) — a stage-by-stage interactive learning game about the Operating Systems Producer–Consumer problem: semaphores, mutex locks, race conditions and a 5-slot bounded buffer.">
+<meta name="theme-color" content="#4B5320">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234B5320'/%3E%3Crect x='5' y='11' width='6' height='10' rx='1.5' fill='%23fff'/%3E%3Crect x='13' y='11' width='6' height='10' rx='1.5' fill='%23DDE6CF'/%3E%3Crect x='21.75' y='11.75' width='4.5' height='8.5' rx='1.2' fill='none' stroke='%23DDE6CF' stroke-width='1.5'/%3E%3C/svg%3E">
+<!-- Tells the CSS that JavaScript is running, so the stage-by-stage layout can switch on. -->
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/stages.css">
+<link rel="stylesheet" href="css/control-room.css">
+<link rel="stylesheet" href="css/ambient.css">
+</head>
+<body data-stage="mission">
+<a class="skip-link" href="#/play">Skip to the Control Room</a>
+<div class="atmos" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+<!-- Floating, interactive background (js/ambient.js) -->
+<canvas class="ambient" id="ambient" aria-hidden="true"></canvas>
+
+<!-- =========================================================
+     SVG SPRITE — original characters & icons (no external assets)
+     ========================================================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- Producer: "The Maker" — green body, hard hat, carrying a package -->
+    <symbol id="bot-producer" viewBox="0 0 120 140">
+      <ellipse cx="60" cy="133" rx="38" ry="5.5" fill="#4B5320" opacity=".14"/>
+      <rect x="40" y="112" width="14" height="18" rx="6" fill="#3A4118"/>
+      <rect x="66" y="112" width="14" height="18" rx="6" fill="#3A4118"/>
+      <rect x="12" y="74" width="16" height="30" rx="8" fill="#5E6832"/>
+      <rect x="24" y="54" width="72" height="64" rx="22" fill="#4B5320"/>
+      <rect x="34" y="64" width="52" height="34" rx="14" fill="#F4F6F0"/>
+      <circle cx="49" cy="80" r="4.6" fill="#202719"/>
+      <circle cx="71" cy="80" r="4.6" fill="#202719"/>
+      <circle cx="50.6" cy="78.4" r="1.4" fill="#fff"/>
+      <circle cx="72.6" cy="78.4" r="1.4" fill="#fff"/>
+      <circle cx="41" cy="89" r="3" fill="#DDE6CF"/>
+      <circle cx="79" cy="89" r="3" fill="#DDE6CF"/>
+      <path d="M53 88.5 Q60 94 67 88.5" stroke="#202719" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <path d="M32 56 C32 35 45 24 60 24 C75 24 88 35 88 56 Z" fill="#DDE6CF" stroke="#4B5320" stroke-width="3"/>
+      <rect x="23" y="52" width="74" height="9" rx="4.5" fill="#DDE6CF" stroke="#4B5320" stroke-width="3"/>
+      <path d="M60 25 V52" stroke="#4B5320" stroke-width="3"/>
+      <rect x="92" y="78" width="14" height="22" rx="7" fill="#5E6832"/>
+      <g transform="translate(80 94)">
+        <rect width="30" height="24" rx="4" fill="#FFFFFF" stroke="#4B5320" stroke-width="2.6"/>
+        <path d="M0 8 H30 M15 0 V24" stroke="#B9C79C" stroke-width="3"/>
+      </g>
+    </symbol>
+    <!-- Consumer: "The Receiver" — sage body, headset, opening a package -->
+    <symbol id="bot-consumer" viewBox="0 0 120 140">
+      <ellipse cx="60" cy="133" rx="38" ry="5.5" fill="#4B5320" opacity=".14"/>
+      <rect x="40" y="112" width="14" height="18" rx="6" fill="#4B5320"/>
+      <rect x="66" y="112" width="14" height="18" rx="6" fill="#4B5320"/>
+      <rect x="92" y="74" width="16" height="30" rx="8" fill="#C9D6B4" stroke="#4B5320" stroke-width="2.5"/>
+      <rect x="24" y="50" width="72" height="68" rx="34" fill="#DDE6CF" stroke="#4B5320" stroke-width="3"/>
+      <rect x="36" y="62" width="48" height="32" rx="14" fill="#FFFFFF" stroke="#4B5320" stroke-width="2"/>
+      <circle cx="50" cy="78" r="4.6" fill="#202719"/>
+      <circle cx="70" cy="78" r="4.6" fill="#202719"/>
+      <circle cx="51.6" cy="76.4" r="1.4" fill="#fff"/>
+      <circle cx="71.6" cy="76.4" r="1.4" fill="#fff"/>
+      <path d="M54 86 Q60 90.5 66 86" stroke="#202719" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <path d="M26 66 C26 37 42 26 60 26 C78 26 94 37 94 66" fill="none" stroke="#4B5320" stroke-width="5" stroke-linecap="round"/>
+      <rect x="17" y="57" width="14" height="22" rx="7" fill="#4B5320"/>
+      <rect x="89" y="57" width="14" height="22" rx="7" fill="#4B5320"/>
+      <path d="M24 78 C24 92 33 99 44 99" stroke="#4B5320" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="46" cy="99" r="3.2" fill="#4B5320"/>
+      <circle cx="60" cy="106" r="7" fill="#4B5320"/>
+      <path d="M56.5 106 l2.6 2.6 l4.6-5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="12" y="76" width="16" height="28" rx="8" fill="#C9D6B4" stroke="#4B5320" stroke-width="2.5"/>
+      <g transform="translate(6 100)">
+        <rect width="30" height="20" rx="3" fill="#fff" stroke="#4B5320" stroke-width="2.5"/>
+        <path d="M1 2 L-5 -6 M29 2 L35 -6" stroke="#4B5320" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+    </symbol>
+    <symbol id="i-pkg" viewBox="0 0 24 24"><path d="M12 2.6 3.6 7v10L12 21.4 20.4 17V7L12 2.6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3.9 7.2 12 11.6l8.1-4.4M12 11.6v9.6M7.8 4.8l8.2 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="15.7" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V7.6a4 4 0 0 1 7.7-1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="15.7" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.6v12.8L18.4 12 8 5.6Z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-step" viewBox="0 0 24 24"><path d="M5.5 5.6v12.8L15 12 5.5 5.6Z" fill="currentColor"/><rect x="16" y="5.4" width="2.8" height="13.2" rx="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4.6 12a7.4 7.4 0 1 0 2.2-5.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4.2 4.4v4.2h4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4.8" cy="6.5" r="1.4" fill="currentColor"/><circle cx="4.8" cy="12" r="1.4" fill="currentColor"/><circle cx="4.8" cy="17.5" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3.5h6M10 3.5v5.2L5.2 17.3A2.1 2.1 0 0 0 7 20.5h10a2.1 2.1 0 0 0 1.8-3.2L14 8.7V3.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.4 15h9.2" stroke="currentColor" stroke-width="1.9"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path d="M4.5 12h12M12.5 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 12h13M13 6.5l5.5 5.5-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H6M11 6.5 5.5 12l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.2 2.6 5 13.6h6.2L10.4 21.4 19 10.2h-6.2l.4-7.6Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 7.4V12l3.2 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.2 2.6 5.5 6 .7-4.4 4.1 1.2 5.9L12 16.5l-5.4 2.9 1.2-5.9-4.4-4.1 6-.7L12 3.2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><rect x="2.2" y="7" width="3.2" height="10" rx="1" fill="currentColor"/><rect x="6.6" y="7" width="3.2" height="10" rx="1" fill="currentColor"/><rect x="11" y="7" width="3.2" height="10" rx="1" fill="currentColor"/><rect x="15.4" y="7" width="3.2" height="10" rx="1" fill="currentColor"/><rect x="19.8" y="7" width="2.6" height="10" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.6l4.3 4.3L19 7.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.6 2.6 20h18.8L12 3.6Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v16M6 20h12M4 8h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6.5 8 3.5 14a3 3 0 0 0 6 0L6.5 8ZM17.5 8l-3 6a3 3 0 0 0 6 0l-3-6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.1A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M11 3.6l1.7 4.7 4.7 1.7-4.7 1.7L11 16.4l-1.7-4.7L4.6 10l4.7-1.7L11 3.6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M18 14.2l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2Z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<!-- =========================================================
+     TOP BAR — brand, chapter jump bar, journey progress
+     ========================================================= -->
+<header class="topbar">
+  <nav class="nav-inner" aria-label="Chapters">
+    <a class="brand" href="#/mission">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="9" fill="#4B5320"/><rect x="5" y="11" width="6" height="10" rx="1.6" fill="#fff"/><rect x="13" y="11" width="6" height="10" rx="1.6" fill="#DDE6CF"/><rect x="21.75" y="11.75" width="4.5" height="8.5" rx="1.3" fill="none" stroke="#DDE6CF" stroke-width="1.5"/></svg>
+      <span>G.R.O.O.T.</span>
+    </a>
+    <div class="nav-right">
+      <ul class="nav-links" id="nav-links">
+        <li><button class="chap" type="button" data-chapter="mission">Mission</button></li>
+        <li><button class="chap" type="button" data-chapter="cast">Cast</button></li>
+        <li><button class="chap" type="button" data-chapter="learn">Learn</button></li>
+        <li><button class="chap" type="button" data-chapter="play">Play</button></li>
+        <li><button class="chap" type="button" data-chapter="results">Results</button></li>
+        <li><button class="chap" type="button" data-chapter="logic">Logic</button></li>
+      </ul>
+      <button class="ambient-toggle" type="button" id="ambient-toggle" aria-pressed="true" title="Floating background: on"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-spark"></use></svg><span class="sr-only">Floating background animation</span></button>
+      <button class="nav-toggle" type="button" id="nav-toggle" aria-expanded="false" aria-controls="nav-links"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span><span id="nav-toggle-label">Mission</span></button>
+    </div>
+  </nav>
+  <div class="trip" aria-hidden="true"><i id="trip-fill"></i></div>
+</header>
+
+<main class="stages" id="stages">
+
+<!-- =========================================================
+     STAGE 1 — MISSION BRIEFING (hero)
+     ========================================================= -->
+<section class="stage hero" data-stage="mission" aria-labelledby="hero-title">
+  <div class="stage-inner hero-inner">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>Terminal online · OS mini-project</p>
+    <h1 id="hero-title" class="hero-title stage-title" tabindex="-1" aria-label="G.R.O.O.T.">G<span class="dot">.</span>R<span class="dot">.</span>O<span class="dot">.</span>O<span class="dot">.</span>T<span class="dot">.</span></h1>
+    <p class="hero-expansion"><b>G</b>uarded <b>R</b>esource <b>O</b>rchestration &amp; <b>O</b>peration <b>T</b>erminal</p>
+    <p class="hero-term"><span class="prompt" aria-hidden="true">&gt;</span> safely coordinating access to shared resources<span class="caret" aria-hidden="true"></span></p>
+    <p class="hero-sub">Two workers. One shared buffer. Keep the system stable.</p>
+    <p class="hero-story">A Producer creates packages. A Consumer processes them. Between them is a limited storage buffer. Your mission: prevent chaos and keep the system moving.</p>
+    <div class="hero-actions">
+      <button class="btn" type="button" data-goto="cast">Start the Mission <svg class="ico" aria-hidden="true" focusable="false"><use href="#i-next"></use></svg></button>
+      <button class="btn btn-secondary" type="button" data-goto="learn">How It Works</button>
+    </div>
+    <p class="hero-skip">In a hurry? <button class="link-btn" type="button" data-goto="play">Jump straight to the Control Room</button></p>
+    <figure class="hero-scene glass" role="img" aria-label="Illustration: the Producer on the left, five empty buffer slots in the middle, and the Consumer on the right.">
+      <div class="scene-row">
+        <div class="scene-actor">
+          <svg class="bot bot-bob" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-producer"></use></svg>
+          <span class="actor-label">Producer</span>
+        </div>
+        <div class="hero-buffer" aria-hidden="true">
+          <div class="hero-slots"><span class="hslot" data-n="1"></span><span class="hslot" data-n="2"></span><span class="hslot" data-n="3"></span><span class="hslot" data-n="4"></span><span class="hslot" data-n="5"></span></div>
+          <div class="conveyor"></div>
+          <span class="travel-pkg"><svg viewBox="0 0 24 24" focusable="false"><use href="#i-pkg"></use></svg></span>
+          <span class="actor-label">Shared buffer · 5 slots</span>
+        </div>
+        <div class="scene-actor">
+          <svg class="bot bot-bob alt" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-consumer"></use></svg>
+          <span class="actor-label">Consumer</span>
+        </div>
+      </div>
+      <figcaption class="scene-chips"><code>capacity = 5</code><code>empty = 5</code><code>full = 0</code><code>mutex = unlocked</code></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 2 — MEET THE CAST (cards revealed one by one)
+     ========================================================= -->
+<section class="stage" data-stage="cast" aria-labelledby="cast-title">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 1 · Meet the Cast</p>
+      <h2 id="cast-title" class="stage-title" tabindex="-1">Three characters. One tiny stage.</h2>
+      <p class="lead">Every operating system is full of little stories like this one. Press <b>Next</b> to meet each character.</p>
+    </header>
+    <div class="cast-grid">
+      <article class="cast-card glass">
+        <div class="cast-icon"><svg class="bot" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-producer"></use></svg></div>
+        <span class="tag">The Maker</span>
+        <h3>Producer</h3>
+        <p>Creates packages and places them into the shared buffer.</p>
+        <p class="cast-meta">Checks <code>empty</code> before adding.</p>
+      </article>
+      <article class="cast-card glass" data-reveal data-label="Meet the Shared Buffer">
+        <div class="cast-icon"><span class="mini-buffer-icon" aria-hidden="true"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></span></div>
+        <span class="tag">The Stage</span>
+        <h3>Shared Buffer</h3>
+        <p>A limited storage space that temporarily holds packages between the two workers.</p>
+        <p class="cast-meta">Exactly 5 slots, guarded by a <code>mutex</code>.</p>
+      </article>
+      <article class="cast-card glass" data-reveal data-label="Meet the Consumer">
+        <div class="cast-icon"><svg class="bot" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-consumer"></use></svg></div>
+        <span class="tag">The Receiver</span>
+        <h3>Consumer</h3>
+        <p>Takes packages from the buffer and processes them.</p>
+        <p class="cast-meta">Checks <code>full</code> before removing.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 3 — THE STORY: want · need · conflict
+     ========================================================= -->
+<section class="stage" data-stage="story" aria-labelledby="story-title">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 1 · The Story</p>
+      <h2 id="story-title" class="stage-title" tabindex="-1">Every story needs a conflict</h2>
+      <p class="lead">This one comes in three beats.</p>
+    </header>
+    <div class="story-grid">
+      <article class="beat-card glass">
+        <span class="beat-ico" aria-hidden="true"><svg class="ico" focusable="false"><use href="#i-heart"></use></svg></span>
+        <p class="beat-label">Want</p>
+        <p class="beat-big">The Producer wants to keep creating. The Consumer wants to keep processing.</p>
+      </article>
+      <article class="beat-card glass" data-reveal data-label="What do they need?">
+        <span class="beat-ico" aria-hidden="true"><svg class="ico" focusable="false"><use href="#i-lock"></use></svg></span>
+        <p class="beat-label">Need</p>
+        <p class="beat-big">They need safe, organized access to the same shared buffer.</p>
+      </article>
+      <article class="beat-card glass conflict" data-reveal data-label="What's the conflict?">
+        <span class="beat-ico" aria-hidden="true"><svg class="ico" focusable="false"><use href="#i-bolt"></use></svg></span>
+        <p class="beat-label">Conflict</p>
+        <p class="beat-big">The buffer has limited space, and both workers can operate at different speeds.</p>
+      </article>
+    </div>
+    <p class="punchline glass" data-reveal data-label="Name the problem">That tension has a name: the <b>Producer–Consumer Problem</b>. Let's learn its rules.</p>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 4 — LEARN THE RULES (four gated steps)
+     ========================================================= -->
+<section class="stage" data-stage="learn" aria-labelledby="learn-h">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 2 · Learn the Rules</p>
+      <h2 id="learn-h" class="stage-title" tabindex="-1">Four tiny experiments</h2>
+      <p class="lead">Do each experiment to unlock the next rule. No theory wall — promise.</p>
+    </header>
+    <div class="learn glass">
+      <ol class="stepper" id="learn-stepper" aria-label="Lesson steps">
+        <li><button class="step-pill" type="button" data-step="0"><span class="num">1</span><span>A Package Appears</span></button></li>
+        <li><button class="step-pill" type="button" data-step="1"><span class="num">2</span><span>Send It Out</span></button></li>
+        <li><button class="step-pill" type="button" data-step="2"><span class="num">3</span><span>Too Much Production</span></button></li>
+        <li><button class="step-pill" type="button" data-step="3"><span class="num">4</span><span>Nothing to Consume</span></button></li>
+      </ol>
+      <div class="learn-body">
+        <div class="learn-copy">
+          <p class="step-kicker" id="learn-kicker">Step 1 of 4</p>
+          <h3 class="learn-title" id="learn-title" tabindex="-1">A Package Appears</h3>
+          <p class="learn-prompt" id="learn-prompt"></p>
+          <div class="learn-actions">
+            <button class="btn" type="button" id="learn-create"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg>Create Package</button>
+            <button class="btn" type="button" id="learn-consume"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-out"></use></svg>Consume Package</button>
+            <button class="btn btn-secondary" type="button" id="learn-reset"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-reset"></use></svg>Reset Buffer</button>
+          </div>
+          <div class="feedback" id="learn-feedback" role="status" aria-live="polite"></div>
+        </div>
+        <div class="learn-stage">
+          <div class="mini-row">
+            <div class="mini-actor" id="learn-prod">
+              <svg class="bot-sm" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-producer"></use></svg>
+              <span class="status-bubble" id="learn-prod-status">Ready</span>
+            </div>
+            <div class="mini-buf">
+              <div class="slots slots-md" id="learn-slots" role="list" aria-label="Lesson buffer">
+                <div class="slot" role="listitem"><span class="slot-num">1</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div></div>
+                <div class="slot" role="listitem"><span class="slot-num">2</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div></div>
+                <div class="slot" role="listitem"><span class="slot-num">3</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div></div>
+                <div class="slot" role="listitem"><span class="slot-num">4</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div></div>
+                <div class="slot" role="listitem"><span class="slot-num">5</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div></div>
+              </div>
+              <div class="pointers slots-md" id="learn-ptrs" aria-hidden="true"><span class="ptr"></span><span class="ptr"></span><span class="ptr"></span><span class="ptr"></span><span class="ptr"></span></div>
+            </div>
+            <div class="mini-actor" id="learn-cons">
+              <svg class="bot-sm" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-consumer"></use></svg>
+              <span class="status-bubble" id="learn-cons-status">Ready</span>
+            </div>
+          </div>
+          <div class="sem-chips"><span class="sem-chip" id="learn-empty">empty = 5</span><span class="sem-chip" id="learn-full">full = 0</span><span class="sem-chip">capacity = 5</span></div>
+          <p class="stage-caption">IN = where the next package goes · OUT = the oldest package</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 5 — ONE DOOR, TWO WORKERS (gated: try a path)
+     ========================================================= -->
+<section class="stage" data-stage="door" aria-labelledby="door-h">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 3 · The Safety Door</p>
+      <h2 id="door-h" class="stage-title" tabindex="-1">One Door, Two Workers</h2>
+      <p class="lead">The buffer is shared. What happens if both workers change it at the same moment?</p>
+    </header>
+    <div class="door-grid">
+      <div class="decision glass">
+        <p class="kicker">Your call, Controller</p>
+        <h3>Both workers reach the buffer at the same instant. What do you allow?</h3>
+        <div class="choice-row">
+          <button class="choice choice-unsafe" type="button" id="door-unsafe" aria-pressed="false">
+            <span class="choice-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-bolt"></use></svg></span>
+            <span><b>Allow simultaneous access</b><small>Both walk in together. Faster… right?</small></span>
+          </button>
+          <button class="choice choice-safe" type="button" id="door-safe" aria-pressed="false">
+            <span class="choice-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-lock"></use></svg></span>
+            <span><b>Use a mutex lock</b><small>One worker inside at a time.</small></span>
+          </button>
+        </div>
+        <div class="door-result" id="door-result" role="status" aria-live="polite" hidden></div>
+        <button class="btn btn-secondary btn-sm" type="button" id="door-reset" hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-reset"></use></svg>Reset the scene</button>
+      </div>
+      <div class="door-scene glass">
+        <div class="ds-stage">
+          <div class="ds-actor" id="ds-p" data-pos="out">
+            <svg class="bot-sm" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-producer"></use></svg>
+            <span class="status-bubble" id="ds-p-status">Ready</span>
+          </div>
+          <div class="ds-room" id="ds-room">
+            <div class="ds-door" id="ds-door" data-state="idle"><svg class="ico" aria-hidden="true" focusable="false"><use id="ds-door-icon" href="#i-unlock"></use></svg><span id="ds-door-text">One door into the buffer</span></div>
+            <div class="ds-slots" id="ds-slots" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="ds-counter" id="ds-counter"><span>counter = <b id="ds-count">2</b></span><span>actual = <b id="ds-actual">2</b></span></div>
+          </div>
+          <div class="ds-actor" id="ds-c" data-pos="out">
+            <svg class="bot-sm" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-consumer"></use></svg>
+            <span class="status-bubble" id="ds-c-status">Ready</span>
+          </div>
+        </div>
+        <div class="trace" aria-label="Instruction trace">
+          <div class="trace-head"><span>Producer</span><span>Consumer</span></div>
+          <ol class="trace-list" id="ds-trace"></ol>
+          <p class="trace-empty" id="ds-trace-empty">Pick a path to see each worker's instructions, in the order they really happen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 6 — DIFFERENT JOBS: semaphores vs mutex
+     ========================================================= -->
+<section class="stage" data-stage="jobs" aria-labelledby="jobs-h">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 3 · Two Tools</p>
+      <h2 id="jobs-h" class="stage-title" tabindex="-1">Different jobs</h2>
+      <p class="lead">The semaphores and the mutex never do each other's work. You need both.</p>
+    </header>
+    <div class="jobs">
+      <div class="job glass">
+        <p class="job-k">Counting semaphores</p>
+        <h3><code>empty</code> &amp; <code>full</code></h3>
+        <p class="job-q">“Is this operation possible?”</p>
+        <p>They count free spaces and ready items, so they decide <b>whether</b> a worker may add or remove.</p>
+      </div>
+      <div class="job-vs" aria-hidden="true">different<br>jobs</div>
+      <div class="job glass">
+        <p class="job-k">Binary lock</p>
+        <h3><code>mutex</code></h3>
+        <p class="job-q">“Is it my turn?”</p>
+        <p>It ensures only one process modifies the shared buffer at a time, so it decides <b>who</b> goes in.</p>
+      </div>
+    </div>
+    <div class="spot glass">
+      <h3>Spot them in the Control Room</h3>
+      <div class="spot-row">
+        <div class="spot-item"><span class="mini-pill">Waiting for space</span><p>A counting semaphore said “not possible yet”: <code>empty = 0</code> (or <code>full = 0</code> for “Waiting for item”).</p></div>
+        <div class="spot-item"><span class="mini-pill">Waiting for mutex</span><p>The operation is possible, but the other worker is inside. It simply isn't your turn.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 7 — CONTROL ROOM (main game)
+     ========================================================= -->
+<section class="stage" data-stage="play" aria-labelledby="play-h">
+  <div class="stage-inner wrap wrap-wide">
+    <noscript><p class="lead">The Control Room needs JavaScript to run.</p></noscript>
+
+    <div class="room" id="room">
+      <!-- Game status panel -->
+      <div class="status-bar glass">
+        <div class="sb-cell sb-mission">
+          <span class="sb-k">Chapter 4 · The Main Game</span>
+          <div class="sb-title-row"><h2 id="play-h" class="stage-title sb-title" tabindex="-1">Control Room</h2><span class="scenario-chip" id="scenario-chip" hidden></span></div>
+          <p><b>Mission:</b> <span id="mission-text">Process 15 packages without causing a synchronization failure.</span></p>
+        </div>
+        <div class="sb-cell">
+          <span class="sb-k">Shift progress</span>
+          <p class="sb-v"><span id="sb-consumed">0</span>/15</p>
+          <div class="progress" id="sb-progress" role="progressbar" aria-label="Packages consumed" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0"><span id="sb-bar"></span></div>
+        </div>
+        <div class="sb-cell sb-integrity" id="sb-integrity-cell">
+          <span class="sb-k">Buffer integrity</span>
+          <p class="sb-v" id="sb-integrity">100%</p>
+          <span class="sb-sub" id="sb-integrity-note">empty + full = 5</span>
+        </div>
+        <div class="sb-cell sb-run-cell">
+          <span class="sb-k">System</span>
+          <p class="sb-v" id="sb-run">Idle</p>
+          <span class="mode-badge" id="sb-mode">Safe mode · mutex on</span>
+        </div>
+      </div>
+
+      <!-- Unsafe experiment banner (only visible while the scripted demo runs) -->
+      <div class="unsafe-banner" id="unsafe-banner" hidden>
+        <div>
+          <strong>⚠ Unsafe experiment — mutex disabled</strong>
+          <p>A scripted race-condition demo is running on a staged copy of the buffer. Your real shift is paused and untouched.</p>
+        </div>
+        <div class="btns">
+          <button class="btn btn-sm btn-danger" type="button" id="btn-replay-race"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-reset"></use></svg>Replay race</button>
+          <button class="btn btn-sm" type="button" id="btn-restore"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-lock"></use></svg>Restore mutex (safe mode)</button>
+        </div>
+      </div>
+
+      <div class="room-grid">
+        <!-- Producer panel -->
+        <article class="worker glass" id="panel-producer" data-tone="idle" aria-labelledby="pp-name">
+          <div class="worker-head">
+            <svg class="worker-bot" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-producer"></use></svg>
+            <div><p class="worker-role">The Maker</p><h3 id="pp-name">Producer</h3></div>
+          </div>
+          <div class="status-pill" id="p-status" data-tone="idle" role="status" aria-label="Producer status"><span class="dot" aria-hidden="true"></span><span class="txt">Ready</span></div>
+          <dl class="facts">
+            <div><dt>Holding</dt><dd id="p-holding">—</dd></div>
+            <div><dt>Queued</dt><dd id="p-orders">0</dd></div>
+            <div><dt>Produced</dt><dd id="p-produced">0</dd></div>
+            <div><dt>Wait events</dt><dd id="p-waits">0</dd></div>
+          </dl>
+          <ol class="program" data-program="producer" aria-label="Producer program, current line highlighted">
+            <li>produce(item)</li><li>wait(empty)</li><li>wait(mutex)</li><li class="is-cs">add item to buffer</li><li>signal(mutex)</li><li>signal(full)</li>
+          </ol>
+          <div class="speed">
+            <label for="p-speed">Producer speed <output id="p-speed-out" for="p-speed">Medium</output></label>
+            <input type="range" id="p-speed" min="0" max="2" step="1" value="1" aria-valuetext="Medium">
+            <div class="ticks" aria-hidden="true"><span>Slow</span><span>Medium</span><span>Fast</span></div>
+          </div>
+        </article>
+
+        <!-- Central buffer -->
+        <article class="buffer-panel glass" aria-labelledby="buf-title">
+          <div class="buffer-head">
+            <h3 id="buf-title">Shared Buffer</h3>
+            <span class="cap-chip">Buffer capacity: 5 · circular</span>
+          </div>
+          <div class="door-strip" id="door-strip" data-state="open">
+            <svg class="ico" aria-hidden="true" focusable="false"><use id="door-icon" href="#i-unlock"></use></svg>
+            <span id="mutex-text">Mutex: Unlocked</span>
+          </div>
+          <div class="slots slots-lg" id="slots" role="list" aria-label="Buffer slots">
+            <div class="slot is-empty" role="listitem"><span class="slot-num">1</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div><span class="slot-note"></span></div>
+            <div class="slot is-empty" role="listitem"><span class="slot-num">2</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div><span class="slot-note"></span></div>
+            <div class="slot is-empty" role="listitem"><span class="slot-num">3</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div><span class="slot-note"></span></div>
+            <div class="slot is-empty" role="listitem"><span class="slot-num">4</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div><span class="slot-note"></span></div>
+            <div class="slot is-empty" role="listitem"><span class="slot-num">5</span><div class="pkg"><svg class="pkg-icon" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg><span class="pkg-label"></span></div><span class="slot-note"></span></div>
+          </div>
+          <div class="pointers slots-lg" id="pointers" aria-hidden="true"><span class="ptr"></span><span class="ptr"></span><span class="ptr"></span><span class="ptr"></span><span class="ptr"></span></div>
+
+          <div class="race-alert" id="race-alert" hidden>
+            <strong>⚠ Race Condition Detected</strong>
+            <p>The buffer counter says 3 items, but the displayed buffer contains 2.</p>
+            <p>Both workers changed shared data without mutual exclusion. This can cause inconsistent data.</p>
+          </div>
+
+          <div class="values" id="values-safe">
+            <div class="value"><span class="k">Occupied slots</span><span class="v" id="v-occupied">0/5</span><span class="vs">items in buffer</span></div>
+            <div class="value" id="v-empty-box"><span class="k">empty</span><span class="v" id="v-empty">5</span><span class="vs">free slots</span></div>
+            <div class="value" id="v-full-box"><span class="k">full</span><span class="v" id="v-full">0</span><span class="vs">items ready</span></div>
+            <div class="value"><span class="k">In transit</span><span class="v" id="v-transit">0</span><span class="vs">mid-operation</span></div>
+          </div>
+          <div class="values values-unsafe" id="values-unsafe" hidden>
+            <div class="value"><span class="k">Actual items</span><span class="v" id="vu-actual">2/5</span><span class="vs">what the slots hold</span></div>
+            <div class="value" id="vu-counter-box"><span class="k">Counter says</span><span class="v" id="vu-counter">2</span><span class="vs">shared item counter</span></div>
+          </div>
+          <div class="invariant" id="invariant"><span id="inv-eq">empty 5 + full 0 = 5</span><span id="inv-ok">✓ balanced</span></div>
+          <p class="devcheck" id="devcheck">Dev check ✓ invariant holds</p>
+        </article>
+
+        <!-- Consumer panel -->
+        <article class="worker glass" id="panel-consumer" data-tone="idle" aria-labelledby="cp-name">
+          <div class="worker-head">
+            <svg class="worker-bot" viewBox="0 0 120 140" aria-hidden="true" focusable="false"><use href="#bot-consumer"></use></svg>
+            <div><p class="worker-role">The Receiver</p><h3 id="cp-name">Consumer</h3></div>
+          </div>
+          <div class="status-pill" id="c-status" data-tone="idle" role="status" aria-label="Consumer status"><span class="dot" aria-hidden="true"></span><span class="txt">Ready</span></div>
+          <dl class="facts">
+            <div><dt>Holding</dt><dd id="c-holding">—</dd></div>
+            <div><dt>Queued</dt><dd id="c-orders">0</dd></div>
+            <div><dt>Consumed</dt><dd id="c-consumed">0</dd></div>
+            <div><dt>Wait events</dt><dd id="c-waits">0</dd></div>
+          </dl>
+          <ol class="program" data-program="consumer" aria-label="Consumer program, current line highlighted">
+            <li>wait(full)</li><li>wait(mutex)</li><li class="is-cs">remove item from buffer</li><li>signal(mutex)</li><li>signal(empty)</li><li>consume(item)</li>
+          </ol>
+          <div class="speed">
+            <label for="c-speed">Consumer speed <output id="c-speed-out" for="c-speed">Medium</output></label>
+            <input type="range" id="c-speed" min="0" max="2" step="1" value="1" aria-valuetext="Medium">
+            <div class="ticks" aria-hidden="true"><span>Slow</span><span>Medium</span><span>Fast</span></div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls glass" role="group" aria-label="Simulation controls">
+        <div class="ctrl-group" role="group" aria-label="Manual controls">
+          <span class="ctrl-label">Manual</span>
+          <div class="btns">
+            <button class="btn btn-sm" type="button" id="btn-produce"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg>Produce One Item</button>
+            <button class="btn btn-sm" type="button" id="btn-consume"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-out"></use></svg>Consume One Item</button>
+          </div>
+        </div>
+        <div class="ctrl-group" role="group" aria-label="Run controls">
+          <span class="ctrl-label">Run</span>
+          <div class="btns">
+            <button class="btn btn-sm btn-secondary" type="button" id="btn-auto"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-play"></use></svg>Start Auto Mode</button>
+            <button class="btn btn-sm btn-secondary" type="button" id="btn-pause"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-pause"></use></svg>Pause</button>
+            <button class="btn btn-sm btn-secondary" type="button" id="btn-step"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-step"></use></svg>Step One Event</button>
+          </div>
+        </div>
+        <div class="ctrl-group" role="group" aria-label="System controls">
+          <span class="ctrl-label">System</span>
+          <div class="btns">
+            <button class="btn btn-sm btn-secondary" type="button" id="btn-reset"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-reset"></use></svg>Reset Simulation</button>
+            <button class="btn btn-sm btn-secondary" type="button" id="btn-log" aria-expanded="true" aria-controls="log-panel"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-list"></use></svg>Toggle Event Log</button>
+            <button class="btn btn-sm btn-danger" type="button" id="btn-experiment" aria-pressed="false"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-flask"></use></svg><span class="lbl">Enable Mutex Experiment</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shift coach: explains the latest important event -->
+      <aside class="coach glass" aria-labelledby="coach-title">
+        <span class="coach-icon" aria-hidden="true"><svg class="ico" focusable="false"><use href="#i-bulb"></use></svg></span>
+        <div><h3 class="coach-k" id="coach-title">Shift Coach</h3><p class="coach-text" id="coach-text"></p></div>
+        <div class="legend" aria-label="Slot legend">
+          <span><i aria-hidden="true"></i>Empty slot</span>
+          <span><i class="l-res" aria-hidden="true"></i>Reserved by wait(empty)</span>
+          <span><i class="l-fill" aria-hidden="true"></i>Filled with an item</span>
+          <span><i class="l-claim" aria-hidden="true"></i>Claimed by wait(full)</span>
+        </div>
+      </aside>
+
+      <!-- Event log -->
+      <div class="lower" id="lower">
+        <section class="log-panel glass" id="log-panel" aria-labelledby="log-title">
+          <div class="panel-head"><h3 id="log-title">Event Log</h3><span class="muted">newest first · <span id="log-count">0</span> events</span></div>
+          <ol class="log" id="log" tabindex="0" aria-label="Simulation events, newest first"></ol>
+        </section>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 8 — SCENARIO CHALLENGES
+     ========================================================= -->
+<section class="stage" data-stage="scenarios" aria-labelledby="sc-h">
+  <div class="stage-inner wrap wrap-wide">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 5 · Scenario Challenges</p>
+      <h2 id="sc-h" class="stage-title" tabindex="-1">Pick a shift, watch the system react</h2>
+      <p class="lead">Each scenario resets the Control Room with new settings and starts it for you.</p>
+    </header>
+    <div class="scenario-grid">
+      <article class="scenario-card glass" data-scenario="balanced">
+        <span class="active-chip" hidden>Active</span>
+        <p class="sc-num">01</p>
+        <h3>Balanced Shift</h3>
+        <div class="meters" aria-label="Producer medium, Consumer medium">
+          <div class="meter"><span>Producer</span><span class="bars"><i class="on"></i><i class="on"></i><i></i></span><em>Medium</em></div>
+          <div class="meter"><span>Consumer</span><span class="bars"><i class="on"></i><i class="on"></i><i></i></span><em>Medium</em></div>
+        </div>
+        <p class="sc-lesson">Observe a mostly stable flow.</p>
+        <button class="btn btn-sm" type="button" data-play="balanced"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-play"></use></svg>Play Scenario</button>
+      </article>
+      <article class="scenario-card glass" data-scenario="overflow">
+        <span class="active-chip" hidden>Active</span>
+        <p class="sc-num">02</p>
+        <h3>Overflow Alert</h3>
+        <div class="meters" aria-label="Producer fast, Consumer slow">
+          <div class="meter"><span>Producer</span><span class="bars"><i class="on"></i><i class="on"></i><i class="on"></i></span><em>Fast</em></div>
+          <div class="meter"><span>Consumer</span><span class="bars"><i class="on"></i><i></i><i></i></span><em>Slow</em></div>
+        </div>
+        <p class="sc-lesson">Watch the Producer wait when all slots are full.</p>
+        <button class="btn btn-sm" type="button" data-play="overflow"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-play"></use></svg>Play Scenario</button>
+      </article>
+      <article class="scenario-card glass" data-scenario="emptylane">
+        <span class="active-chip" hidden>Active</span>
+        <p class="sc-num">03</p>
+        <h3>Empty Lane</h3>
+        <div class="meters" aria-label="Producer slow, Consumer fast">
+          <div class="meter"><span>Producer</span><span class="bars"><i class="on"></i><i></i><i></i></span><em>Slow</em></div>
+          <div class="meter"><span>Consumer</span><span class="bars"><i class="on"></i><i class="on"></i><i class="on"></i></span><em>Fast</em></div>
+        </div>
+        <p class="sc-lesson">Watch the Consumer wait when no packages are available.</p>
+        <button class="btn btn-sm" type="button" data-play="emptylane"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-play"></use></svg>Play Scenario</button>
+      </article>
+      <article class="scenario-card glass is-unsafe" data-scenario="unsafe">
+        <span class="active-chip" hidden>Active</span>
+        <p class="sc-num">04</p>
+        <h3>Unsafe Shortcut</h3>
+        <p class="mutex-off"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-warn"></use></svg>Mutex: disabled for scripted demo</p>
+        <p class="sc-lesson">See why mutual exclusion matters.</p>
+        <button class="btn btn-sm btn-danger" type="button" data-play="unsafe"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-play"></use></svg>Play Scenario</button>
+      </article>
+    </div>
+    <p class="sc-note">Playing a scenario takes you back to the Control Room. Come back here with <b>Next</b> or the <b>Play</b> chapter.</p>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 9 — RESULTS (live shift report)
+     ========================================================= -->
+<section class="stage" data-stage="results" aria-labelledby="res-h">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 6 · Shift Report</p>
+      <h2 id="res-h" class="stage-title" tabindex="-1">Results</h2>
+      <p class="lead">Live numbers from the Control Room. A wait is the system doing its job — not a mistake.</p>
+    </header>
+    <div class="results-grid">
+      <div class="ring-card glass">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 160 160" aria-hidden="true" focusable="false"><circle class="ring-bg" cx="80" cy="80" r="66"/><circle class="ring-fg" id="r-ring" cx="80" cy="80" r="66" transform="rotate(-90 80 80)"/></svg>
+          <div class="ring-label"><b id="r-ring-num">0</b><span>of 15 consumed</span></div>
+        </div>
+        <p class="ring-status" id="r-status">Shift not started yet.</p>
+        <div class="integrity-box" id="r-integrity-box">
+          <div class="row"><span class="ik">Buffer Integrity</span><b id="r-integrity">100%</b></div>
+          <p class="integrity-note" id="r-integrity-note">empty + full = 5 · contents match the semaphores</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" type="button" data-goto="play">Back to the Control Room</button>
+      </div>
+      <div class="stat-grid">
+        <div class="stat glass"><span class="k">Packages Produced</span><span class="v" id="r-produced">0</span><span class="d">created by the Producer</span></div>
+        <div class="stat glass"><span class="k">Packages Consumed</span><span class="v" id="r-consumed">0</span><span class="d">processed by the Consumer</span></div>
+        <div class="stat glass"><span class="k">Correct Sync Actions</span><span class="v" id="r-sync">0</span><span class="d">successful wait() / signal() calls</span></div>
+        <div class="stat glass" id="r-pwaits-box"><span class="k">Producer Wait Events</span><span class="v" id="r-pwaits">0</span><span class="d" id="r-pwaits-d">0 for space · 0 for mutex</span></div>
+        <div class="stat glass" id="r-cwaits-box"><span class="k">Consumer Wait Events</span><span class="v" id="r-cwaits">0</span><span class="d" id="r-cwaits-d">0 for items · 0 for mutex</span></div>
+        <div class="stat glass" id="r-race-box"><span class="k">Race Conditions</span><span class="v" id="r-race">0</span><span class="d">only in the scripted demo</span></div>
+      </div>
+    </div>
+    <div class="badges-head"><h3>Session badges</h3><span class="muted">Earned badges stay for this visit, even after a reset.</span></div>
+    <ul class="badges" id="badges">
+      <li class="badge" data-badge="first"><span class="badge-ico"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-pkg"></use></svg></span><b>First Delivery</b><small>Consume one package</small></li>
+      <li class="badge" data-badge="fullhouse"><span class="badge-ico"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-stack"></use></svg></span><b>Full House</b><small>Producer waits for space</small></li>
+      <li class="badge" data-badge="patience"><span class="badge-ico"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-clock"></use></svg></span><b>Patient Receiver</b><small>Consumer waits for an item</small></li>
+      <li class="badge" data-badge="lock"><span class="badge-ico"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-lock"></use></svg></span><b>Lock Keeper</b><small>A worker queues at the mutex</small></li>
+      <li class="badge is-chaos" data-badge="chaos"><span class="badge-ico"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-bolt"></use></svg></span><b>Chaos Witness</b><small>See a race condition</small></li>
+      <li class="badge" data-badge="shift"><span class="badge-ico"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg></span><b>Shift Complete</b><small>15 packages, safely</small></li>
+    </ul>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 10 — THE LOGIC: three variables (revealed one by one)
+     ========================================================= -->
+<section class="stage" data-stage="logic" aria-labelledby="logic-h">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 7 · Under the Hood</p>
+      <h2 id="logic-h" class="stage-title" tabindex="-1">The Logic Behind the Game</h2>
+      <p class="lead">G.R.O.O.T. runs on just three variables. Meet them one at a time.</p>
+    </header>
+    <div class="sem-grid">
+      <article class="sem-card glass">
+        <p class="sem-name"><small>Counting semaphore</small>empty</p>
+        <p class="sem-desc">Counts available spaces in the buffer.</p>
+        <span class="sem-init">Initial value: 5</span>
+        <p class="sem-wait">Producer waits here when the buffer is full.</p>
+      </article>
+      <article class="sem-card glass" data-reveal data-label="Next variable: full">
+        <p class="sem-name"><small>Counting semaphore</small>full</p>
+        <p class="sem-desc">Counts items ready for consumption.</p>
+        <span class="sem-init">Initial value: 0</span>
+        <p class="sem-wait">Consumer waits here when the buffer is empty.</p>
+      </article>
+      <article class="sem-card glass" data-reveal data-label="Next variable: mutex">
+        <p class="sem-name"><small>Binary semaphore / lock</small>mutex</p>
+        <p class="sem-desc">Protects the critical section.</p>
+        <span class="sem-init">Initial value: unlocked / 1</span>
+        <p class="sem-wait">Only one worker can modify the shared buffer at a time.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 11 — PSEUDOCODE + the important rule
+     ========================================================= -->
+<section class="stage" data-stage="code" aria-labelledby="code-h">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 7 · Under the Hood</p>
+      <h2 id="code-h" class="stage-title" tabindex="-1">Twelve lines of pseudocode</h2>
+      <p class="lead">If the Control Room is still running, the highlighted lines follow it live.</p>
+    </header>
+    <div class="code-grid">
+      <article class="code-card glass" aria-labelledby="code-p">
+        <div class="panel-head"><h3 id="code-p">Producer pseudocode</h3><span class="live-dot">follows the Control Room</span></div>
+        <ol class="code" data-program="producer">
+          <li><span><span class="kw">produce</span>(item)</span><span class="cm">// outside critical section</span></li>
+          <li><span><span class="kw">wait</span>(empty)</span><span class="cm">// is there a free slot?</span></li>
+          <li><span><span class="kw">wait</span>(mutex)</span><span class="cm">// enter critical section</span></li>
+          <li class="is-cs"><span>add item to buffer</span><span class="cm">// critical section</span></li>
+          <li><span><span class="kw">signal</span>(mutex)</span><span class="cm">// leave critical section</span></li>
+          <li><span><span class="kw">signal</span>(full)</span><span class="cm">// one more item ready</span></li>
+        </ol>
+      </article>
+      <article class="code-card glass" aria-labelledby="code-c">
+        <div class="panel-head"><h3 id="code-c">Consumer pseudocode</h3><span class="live-dot">follows the Control Room</span></div>
+        <ol class="code" data-program="consumer">
+          <li><span><span class="kw">wait</span>(full)</span><span class="cm">// is there an item?</span></li>
+          <li><span><span class="kw">wait</span>(mutex)</span><span class="cm">// enter critical section</span></li>
+          <li class="is-cs"><span>remove item from buffer</span><span class="cm">// critical section</span></li>
+          <li><span><span class="kw">signal</span>(mutex)</span><span class="cm">// leave critical section</span></li>
+          <li><span><span class="kw">signal</span>(empty)</span><span class="cm">// one more free slot</span></li>
+          <li><span><span class="kw">consume</span>(item)</span><span class="cm">// outside critical section</span></li>
+        </ol>
+      </article>
+    </div>
+    <div class="rule glass">
+      <span class="rule-ico" aria-hidden="true"><svg class="ico" focusable="false"><use href="#i-scale"></use></svg></span>
+      <div>
+        <strong>Important rule: In a correct system, empty + full always equals buffer capacity.</strong>
+        <p class="fine">Fine print for the curious: while a worker sits between its <code>wait()</code> and its matching <code>signal()</code>, one slot is briefly “in transit”. The Control Room counts it, so <code>empty + full + in-transit = 5</code> at every instant — and <code>empty + full = 5</code> whenever both workers are between operations.</p>
+      </div>
+    </div>
+    <div class="tip">
+      <svg class="ico" aria-hidden="true" focusable="false"><use href="#i-warn"></use></svg>
+      <p><b>Order matters.</b> Swap the first two waits — <code>wait(mutex)</code> before <code>wait(empty)</code> — and a Producer could lock the door, find the buffer full, and fall asleep holding the key. The Consumer can never get in to free a slot: <b>deadlock</b>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     STAGE 12 — DEBRIEF + CREDITS
+     ========================================================= -->
+<section class="stage" data-stage="debrief" aria-labelledby="take-h">
+  <div class="stage-inner wrap">
+    <header class="section-head">
+      <p class="eyebrow">Chapter 8 · Debrief</p>
+      <h2 id="take-h" class="stage-title" tabindex="-1">What You Just Controlled</h2>
+      <p class="lead">That's G.R.O.O.T.'s whole job: guard the shared resource, orchestrate who goes next, and keep every operation honest.</p>
+    </header>
+    <div class="take-grid">
+      <article class="take glass"><span class="take-n">01</span><h3>Synchronization</h3><p>Processes coordinate so actions happen at the correct time.</p></article>
+      <article class="take glass" data-reveal data-label="Next: Mutual Exclusion"><span class="take-n">02</span><h3>Mutual Exclusion</h3><p>A mutex prevents simultaneous unsafe modification of shared data.</p></article>
+      <article class="take glass" data-reveal data-label="Next: Buffer Management"><span class="take-n">03</span><h3>Buffer Management</h3><p>Semaphores track available spaces and available items.</p></article>
+    </div>
+    <div class="finale" data-reveal data-label="Roll the credits">
+      <div class="cta-row">
+        <button class="btn" type="button" data-goto="play"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-play"></use></svg>Run another shift</button>
+        <button class="btn btn-secondary" type="button" data-goto="mission">Back to the briefing</button>
+      </div>
+      <footer class="credits-card glass">
+        <div>
+          <p class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="9" fill="#4B5320"/><rect x="5" y="11" width="6" height="10" rx="1.6" fill="#fff"/><rect x="13" y="11" width="6" height="10" rx="1.6" fill="#DDE6CF"/><rect x="21.75" y="11.75" width="4.5" height="8.5" rx="1.3" fill="none" stroke="#DDE6CF" stroke-width="1.5"/></svg>G.R.O.O.T.</p>
+          <p class="footer-tag">Guarded Resource Orchestration &amp; Operation Terminal — a system that safely coordinates access to shared resources.<br>Built as an interactive learning simulation.</p>
+        </div>
+        <dl class="credits">
+          <div><dt>Project</dt><dd>Producer–Consumer Problem</dd></div>
+          <div><dt>Course</dt><dd>Operating Systems</dd></div>
+          <!-- EDIT: replace the placeholders below with your team members' names -->
+          <div><dt>Team members</dt><dd>[Team Member 1] · [Team Member 2] · [Team Member 3] · [Team Member 4]</dd></div>
+        </dl>
+      </footer>
+      <p class="footer-fine">Original characters, icons and code. No external images.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- =========================================================
+     BOTTOM BAR — Back · progress · Next
+     ========================================================= -->
+<nav class="bottombar" aria-label="Story navigation">
+  <div class="bottombar-inner glass">
+    <button class="btn btn-secondary btn-back" type="button" id="back-btn"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-back"></use></svg><span class="lbl">Back</span></button>
+    <div class="bb-center">
+      <span class="sdots" id="stage-dots" aria-hidden="true"></span>
+      <p class="bb-count" id="stage-counter">Stage 1 of 12</p>
+      <p class="gate-hint" id="gate-hint" hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-lock"></use></svg><span id="gate-text"></span></p>
+    </div>
+    <button class="btn btn-next" type="button" id="next-btn"><span class="lbl" id="next-label">Next</span><span class="lbl-short" aria-hidden="true">Next</span><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-next"></use></svg></button>
+  </div>
+</nav>
+
+<!-- =========================================================
+     WIN MODAL
+     ========================================================= -->
+<dialog class="modal" id="win-modal" aria-labelledby="win-title" aria-describedby="win-lead">
+  <div class="modal-inner">
+    <button class="modal-close" type="button" id="win-close" aria-label="Close"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-x"></use></svg></button>
+    <div class="modal-seal" aria-hidden="true"><svg class="ico" focusable="false"><use href="#i-check"></use></svg></div>
+    <h2 id="win-title">Shift Complete!</h2>
+    <p class="modal-lead" id="win-lead">You processed 15 packages while protecting the shared buffer.</p>
+    <dl class="modal-stats">
+      <div><dt>Total produced</dt><dd id="w-produced">0</dd></div>
+      <div><dt>Total consumed</dt><dd id="w-consumed">0</dd></div>
+      <div><dt>Producer waits</dt><dd id="w-pwaits">0</dd></div>
+      <div><dt>Consumer waits</dt><dd id="w-cwaits">0</dd></div>
+      <div><dt>Race conditions</dt><dd id="w-race">0</dd></div>
+      <div><dt>Final integrity</dt><dd id="w-integrity">100%</dd></div>
+    </dl>
+    <div class="modal-actions">
+      <button class="btn" type="button" id="win-again"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-reset"></use></svg>Play Again</button>
+      <button class="btn btn-secondary" type="button" id="win-logic">Review the Logic</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Screen-reader announcements for stage changes and important game events -->
+<div class="sr-only" id="announcer" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Scripts run in this order after the page is parsed (defer). Plain scripts, so no server is needed. -->
+<script src="js/core.js" defer></script>
+<script src="js/ambient.js" defer></script>
+<script src="js/learn.js" defer></script>
+<script src="js/door.js" defer></script>
+<script src="js/simulation.js" defer></script>
+<script src="js/stages.js" defer></script>
+</body>
+</html>
